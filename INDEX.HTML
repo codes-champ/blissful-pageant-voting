@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Blissful Heritage Academy Beauty Pageant</title>
+
+  <link rel="stylesheet" href="STYLE.CSS" />
+</head>
+
+<body>
+
+  <header class="site-header">
+    <h1>Blissful Heritage Academy Beauty Pageant</h1>
+    <p>Vote for your favourite contestant</p>
+  </header>
+
+  <main class="container">
+
+    <section class="intro-section">
+      <h2>Meet Our Contestants</h2>
+      <p>
+        Welcome to our school beauty pageant voting platform.
+        View each contestant and vote for your favourite.
+      </p>
+    </section>
+
+    <section class="contestants-grid" id="contestantsGrid">
+      <!-- Contestant cards will be displayed here by JavaScript -->
+    </section>
+
+  </main>
+
+  <!-- Contestant Details Modal -->
+  <div class="modal-overlay" id="contestantModal">
+    <div class="modal-box">
+
+      <button class="close-btn" id="closeModalBtn">&times;</button>
+
+      <img id="modalImage" src="" alt="Contestant Image" class="modal-image">
+
+      <h2 id="modalName"></h2>
+      <b>
+        <p id="modalContestantRealName"></p>
+      </b>
+      <b>
+        <p id="modalContestantState"></p>
+      </b>
+      <b>
+        <p id="modalContestantCareer"></p>
+      </b>
+      <b>
+        <p id="modalClass"></p>
+      </b>
+   
+        <p id="modalDescription"></p>
+   
+
+      <button class="modal-vote-btn" id="modalVoteBtn">
+        Vote For Me
+      </button>
+
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Blissful Heritage Academy Beauty Pageant. All rights reserved.</p>
+  </footer>
+
+  <script src="SCRIPT.JS"></script>
+</body>
+
+</html>

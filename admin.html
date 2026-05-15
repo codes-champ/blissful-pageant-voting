@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Admin Dashboard - Blissful Heritage Academy</title>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <header class="site-header">
+    <h1>Admin Dashboard</h1>
+    <p>Blissful Heritage Academy Beauty Pageant</p>
+  </header>
+
+  <main class="container">
+
+    <section class="intro-section">
+      <h2>Payment Claims</h2>
+      <p>
+        Confirm only votes that have been verified in the MONIE POINT account.
+      </p>
+    </section>
+
+    <section class="admin-section">
+      <h2>Pending / Confirmed Votes</h2>
+
+      <div id="adminVotesContainer">
+        <!-- Votes will show here -->
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <h2>Confirmed Vote Results</h2>
+
+      <div id="resultsContainer">
+        <!-- Confirmed vote totals will show here -->
+      </div>
+    </section>
+
+    <section class="admin-section admin-actions">
+      <button class="danger-btn" onclick="clearAllVotes()">
+        Clear All Votes
+      </button>
+
+      <button class="danger-btn" onclick="adminLogout()">
+        Logout Admin
+      </button>
+
+      <br><br>
+
+      <a href="index.html">Back to voting page</a>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Blissful Heritage Academy Beauty Pageant. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+  const ADMIN_PASSWORD = "BHAPAGEANT2026";
+
+  const isAdminLoggedIn = sessionStorage.getItem("adminLoggedIn");
+
+  if (isAdminLoggedIn !== "true") {
+    const enteredPassword = prompt("Enter admin password:");
+
+    if (enteredPassword === ADMIN_PASSWORD) {
+      sessionStorage.setItem("adminLoggedIn", "true");
+    } else {
+      alert("Access denied. Admin only.");
+      window.location.href = "index.html";
+    }
+  }
+
+  const adminVotesContainer = document.getElementById("adminVotesContainer");
+  const resultsContainer = document.getElementById("resultsContainer");
+
+  let allVotes = [];
+
+  async function getVotesFromSupabase() {
+    const { data, error } = await supabaseClient
+      .from("votes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log(error);
+      alert("Unable to load votes from Supabase.");
+      return [];
+    }
+
+    return data;
+  }
+
+  async function displayVotes() {
+    const votes = await getVotesFromSupabase();
+
+    allVotes = votes;
+
+    adminVotesContainer.innerHTML = "";
+
+    if (votes.length === 0) {
+      adminVotesContainer.innerHTML = "<p>No vote records yet.</p>";
+      displayResults();
+      return;
+    }
+
+    votes.forEach(function(vote) {
+      const voteCard = document.createElement("div");
+      voteCard.className = "admin-vote-card";
+
+      voteCard.innerHTML = `
+        <img 
+          src="${vote.contestant_image}" 
+          alt="${vote.contestant_name}" 
+          class="admin-vote-image"
+        >
+
+        <div class="admin-vote-info">
+          <p><strong>Vote ID:</strong> ${vote.vote_id || "No ID"}</p>
+
+          <h3>${vote.contestant_name}</h3>
+
+          <p><strong>Student Name:</strong> ${vote.nameof_contestant || "Not provided"}</p>
+          <p><strong>Class:</strong> ${vote.contestant_class || "Not provided"}</p>
+
+          <p><strong>Parent Name:</strong> ${vote.payer_name || "Not provided"}</p>
+          <p><strong>Phone:</strong> ${vote.payer_phone || "Not provided"}</p>
+
+          <p><strong>Amount Claimed:</strong> ₦${vote.amount_paid || 0}</p>
+          <p><strong>Amount Per Vote:</strong> ₦${vote.amount_per_vote || 100}</p>
+          <p><strong>Votes Claimed:</strong> ${vote.calculated_votes || 1}</p>
+
+          <p><strong>Payment Reference:</strong> ${vote.payment_reference || "Not provided"}</p>
+
+          <p><strong>Status:</strong> ${vote.vote_status}</p>
+          <p><strong>Payment Confirmed:</strong> ${vote.payment_confirmed}</p>
+          <p><strong>Date:</strong> ${new Date(vote.created_at).toLocaleString()}</p>
+
+          <div class="admin-buttons">
+            <button class="confirm-btn" onclick="confirmVote(${vote.id})">
+              Confirm Vote
+            </button>
+
+            <button class="reject-btn" onclick="rejectVote(${vote.id})">
+              Reject Vote
+            </button>
+
+            <button class="delete-btn" onclick="deleteVote(${vote.id})">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+
+      adminVotesContainer.appendChild(voteCard);
+    });
+
+    displayResults();
+  }
+
+  async function confirmVote(id) {
+    const vote = allVotes.find(function(item) {
+      return item.id === id;
+    });
+
+    if (!vote) {
+      alert("Vote not found.");
+      return;
+    }
+
+    if (vote.vote_status === "confirmed") {
+      alert("This vote has already been confirmed.");
+      return;
+    }
+
+    if (vote.vote_status === "rejected") {
+      const confirmAgain = confirm(
+        "This vote was rejected before. Are you sure you want to confirm it now?"
+      );
+
+      if (!confirmAgain) {
+        return;
+      }
+    }
+
+    const { error } = await supabaseClient
+      .from("votes")
+      .update({
+        vote_status: "confirmed",
+        payment_confirmed: true
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.log(error);
+      alert("Unable to confirm vote.");
+      return;
+    }
+
+    alert("Vote confirmed successfully.");
+
+    displayVotes();
+  }
+
+  async function rejectVote(id) {
+    const vote = allVotes.find(function(item) {
+      return item.id === id;
+    });
+
+    if (!vote) {
+      alert("Vote not found.");
+      return;
+    }
+
+    if (vote.vote_status === "rejected") {
+      alert("This vote has already been rejected.");
+      return;
+    }
+
+    if (vote.vote_status === "confirmed") {
+      const rejectConfirmed = confirm(
+        "This vote was already confirmed. Are you sure you want to reject it?"
+      );
+
+      if (!rejectConfirmed) {
+        return;
+      }
+    }
+
+    const { error } = await supabaseClient
+      .from("votes")
+      .update({
+        vote_status: "rejected",
+        payment_confirmed: false
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.log(error);
+      alert("Unable to reject vote.");
+      return;
+    }
+
+    alert("Vote rejected.");
+
+    displayVotes();
+  }
+
+  async function deleteVote(id) {
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this vote record?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from("votes")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.log(error);
+      alert("Unable to delete vote.");
+      return;
+    }
+
+    alert("Vote record deleted.");
+
+    displayVotes();
+  }
+
+  function displayResults() {
+    const confirmedVotes = allVotes.filter(function(vote) {
+      return vote.vote_status === "confirmed" && vote.payment_confirmed === true;
+    });
+
+    const result = {};
+
+    confirmedVotes.forEach(function(vote) {
+      const voteCount = vote.calculated_votes || 1;
+
+      if (result[vote.contestant_name]) {
+        result[vote.contestant_name].totalVotes += voteCount;
+      } else {
+        result[vote.contestant_name] = {
+          contestantName: vote.contestant_name,
+          studentName: vote.nameof_contestant || "Not provided",
+          totalVotes: voteCount
+        };
+      }
+    });
+
+    resultsContainer.innerHTML = "";
+
+    const resultValues = Object.values(result);
+
+    if (resultValues.length === 0) {
+      resultsContainer.innerHTML = "<p>No confirmed votes yet.</p>";
+      return;
+    }
+
+    resultValues.forEach(function(item) {
+      const resultCard = document.createElement("div");
+      resultCard.className = "result-card";
+
+      resultCard.innerHTML = `
+        <h3>${item.contestantName}</h3>
+        <p><strong>Student Name:</strong> ${item.studentName}</p>
+        <p><strong>Confirmed Votes:</strong> ${item.totalVotes}</p>
+      `;
+
+      resultsContainer.appendChild(resultCard);
+    });
+  }
+
+  async function clearAllVotes() {
+    const confirmClear = confirm(
+      "Are you sure you want to clear all vote records? This action cannot be undone."
+    );
+
+    if (!confirmClear) {
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from("votes")
+      .delete()
+      .neq("id", 0);
+
+    if (error) {
+      console.log(error);
+      alert("Unable to clear votes.");
+      return;
+    }
+
+    alert("All vote records cleared.");
+
+    displayVotes();
+  }
+
+  function adminLogout() {
+    sessionStorage.removeItem("adminLoggedIn");
+    alert("Admin logged out.");
+    window.location.href = "index.html";
+  }
+
+  displayVotes();
+</script>
+  
+
+</body>
+
+</html>

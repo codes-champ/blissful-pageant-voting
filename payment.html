@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Payment Page - </title>
+
+  <link rel="stylesheet" href="STYLE.CSS" />
+</head>
+<body>
+
+  <header class="site-header">
+    <!-- <h1>Blissful Heritage Academy Beauty Pageant</h1> -->
+    <p>Complete your vote payment</p>
+  </header>
+
+  <main class="container">
+
+    <section class="intro-section">
+      <h2>Payment Confirmation</h2>
+      <p>
+        You are voting for the contestant shown below.
+        Please make your payment using the details provided.
+      </p>
+    </section>
+
+    <section class="payment-card">
+
+      <img 
+        id="paymentContestantImage" 
+        src="" 
+        alt="Contestant Image" 
+        class="payment-image"
+      >
+
+      <h2 id="paymentContestantName"></h2>
+      <p id="paymentContestantClass"></p>
+
+      <div class="payment-details">
+        <h3>Payment Details</h3>
+
+        <p><strong>Bank/App:</strong> MONIE POINT</p>
+        <p><strong>Account Name:</strong> Job Rita Tubonimi</p>
+        <p><strong>Account Number:</strong>5271294218</p>
+        <p><strong>Amount Per Vote:</strong> ₦100</p>
+      </div>
+
+      <div class="payment-form">
+        <h3>Enter Payment Information</h3>
+
+        <label for="payerName">Parent Name</label>
+        <input type="text" id="payerName" placeholder="Enter parent name">
+
+        <label for="payerPhone">Phone Number</label>
+        <input type="text" id="payerPhone" placeholder="Enter phone number">
+
+        <label for="amountPaid">Amount Paid</label>
+        <input type="number" id="amountPaid" placeholder="Enter amount paid">
+
+        <label for="paymentReference">Payment Reference </label>
+        <input type="text" id="paymentReference" placeholder="Example: Mrs John transfer">
+      </div>
+
+      <p class="payment-note">
+        Your vote will only be counted after the school confirms your payment.
+        False payment claims will not be counted.
+      </p>
+
+      <button onclick="confirmPayment()" class="modal-vote-btn">
+        I Have Made Payment
+      </button>
+
+      <br><br>
+
+      <a href="index.html">Back to contestants</a>
+
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026  Beauty Pageant. All rights reserved.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+
+<script>
+  const selectedContestant = JSON.parse(localStorage.getItem("selectedContestant"));
+
+  if (!selectedContestant) {
+    alert("No contestant selected. Please choose a contestant first.");
+    window.location.href = "index.html";
+  } else {
+    document.getElementById("paymentContestantImage").src = selectedContestant.image;
+    document.getElementById("paymentContestantName").textContent = selectedContestant.name;
+    document.getElementById("paymentContestantClass").textContent = selectedContestant.className;
+  }
+async function confirmPayment() {
+  const payerName = document.getElementById("payerName").value.trim();
+  const payerPhone = document.getElementById("payerPhone").value.trim();
+  const amountPaid = Number(document.getElementById("amountPaid").value);
+  const paymentReference = document.getElementById("paymentReference").value.trim();
+
+  const amountPerVote = 100;
+
+  if (payerName === "") {
+    alert("Please enter parent name.");
+    return;
+  }
+
+  if (payerPhone === "") {
+    alert("Please enter phone number.");
+    return;
+  }
+
+  if (!amountPaid || amountPaid < amountPerVote) {
+    alert("Amount paid must be at least ₦100.");
+    return;
+  }
+
+  if (paymentReference === "") {
+    alert("Please enter payment reference or sender name.");
+    return;
+  }
+
+  const calculatedVotes = Math.floor(amountPaid / amountPerVote);
+  const voteId = "VOTE-" + Date.now();
+
+  const newVote = {
+    vote_id: voteId,
+
+    contestant_id: selectedContestant.id,
+    contestant_name: selectedContestant.name,
+    nameof_contestant: selectedContestant.nameofContestant || "",
+    contestant_class: selectedContestant.className,
+    contestant_image: selectedContestant.image,
+
+    payer_name: payerName,
+    payer_phone: payerPhone,
+    amount_paid: amountPaid,
+    amount_per_vote: amountPerVote,
+    calculated_votes: calculatedVotes,
+    payment_reference: paymentReference,
+
+    vote_status: "pending",
+    payment_confirmed: false
+  };
+
+  const { error } = await supabaseClient
+    .from("votes")
+    .insert([newVote]);
+
+  if (error) {
+    console.log(error);
+    alert("Something went wrong while submitting your vote. Please try again.");
+    return;
+  }
+
+  localStorage.removeItem("selectedContestant");
+
+  alert(
+  "Thank you. Your payment claim has been submitted.\n\n" +
+  "Your Vote ID is: " + voteId + "\n\n" +
+  "Please keep this Vote ID for reference. Your vote will only count after admin confirmation."
+);
+
+  window.location.href = "index.html";
+}
+</script>
+</body>
+</html>
