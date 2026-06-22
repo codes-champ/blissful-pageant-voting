@@ -1,0 +1,19 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/closed.html",
+      "permanent": false
+    },
+    {
+      "source": "/index.html",
+      "destination": "/closed.html",
+      "permanent": false
+    },
+    {
+      "source": "/payment.html",
+      "destination": "/closed.html",
+      "permanent": false
+    }
+  ]
+}
