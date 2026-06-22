@@ -6,7 +6,17 @@
       "permanent": false
     },
     {
+      "source": "/index",
+      "destination": "/closed.html",
+      "permanent": false
+    },
+    {
       "source": "/index.html",
+      "destination": "/closed.html",
+      "permanent": false
+    },
+    {
+      "source": "/payment",
       "destination": "/closed.html",
       "permanent": false
     },
